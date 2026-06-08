@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
+
+export const dynamic = "force-dynamic";
 import { Enquiry } from "@/lib/models/Enquiry";
 
 function serialize(doc: any) {

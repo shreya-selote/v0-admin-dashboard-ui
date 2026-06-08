@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 
+export const dynamic = "force-dynamic";
+
 // Convert a Mongo document into the plain shape the UI expects (string `id`).
 function serialize(doc: any) {
   const { _id, __v, ...rest } = doc;

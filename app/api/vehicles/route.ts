@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { Vehicle } from "@/lib/models/Vehicle";
 
+export const dynamic = "force-dynamic";
+
 function serialize(doc: any) {
   const { _id, __v, ...rest } = doc;
   return { id: _id.toString(), ...rest };
