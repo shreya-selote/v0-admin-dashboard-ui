@@ -19,10 +19,14 @@ const chartData = [
 ];
 
 export default function DashboardPage() {
-  const { data: usersData } = useResource<User>('/api/users');
-  const { data: vehiclesData } = useResource<Vehicle>('/api/vehicles');
-  const { data: enquiriesData } = useResource<Enquiry>('/api/enquiries');
-  const { data: inventoryData } = useResource<Inventory>('/api/inventory');
+  // Poll every 5s so the key metrics stay in near real-time sync with the database.
+  const REFRESH_MS = 5000;
+  const { data: usersData, isValidating: usersValidating } = useResource<User>('/api/users', { refreshInterval: REFRESH_MS });
+  const { data: vehiclesData, isValidating: vehiclesValidating } = useResource<Vehicle>('/api/vehicles', { refreshInterval: REFRESH_MS });
+  const { data: enquiriesData, isValidating: enquiriesValidating } = useResource<Enquiry>('/api/enquiries', { refreshInterval: REFRESH_MS });
+  const { data: inventoryData, isValidating: inventoryValidating } = useResource<Inventory>('/api/inventory', { refreshInterval: REFRESH_MS });
+
+  const isLive = usersValidating || vehiclesValidating || enquiriesValidating || inventoryValidating;
 
   const statusData = [
     { name: 'Available', value: vehiclesData.filter(v => v.status === 'Available').length, color: 'oklch(0.6 0.2 264.36)' },
@@ -45,6 +49,22 @@ export default function DashboardPage() {
 
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Key Metrics */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Live Metrics
+          </h2>
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <span className="relative flex h-2.5 w-2.5">
+              <span
+                className={`absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 ${
+                  isLive ? 'animate-ping' : ''
+                }`}
+              />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+            </span>
+            {isLive ? 'Updating…' : 'Live'}
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           <StatCard
             title="Active Users"
