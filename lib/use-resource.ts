@@ -10,15 +10,26 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+interface UseResourceOptions {
+  /** Poll the endpoint on an interval (ms) for near real-time updates. */
+  refreshInterval?: number;
+}
+
 /**
  * Generic typed hook for fetching a list resource from our API routes.
  * Returns data (defaulting to an empty array), loading and error states.
+ * Pass a refreshInterval to enable real-time polling.
  */
-export function useResource<T>(url: string) {
-  const { data, error, isLoading, mutate } = useSWR<T[]>(url, fetcher);
+export function useResource<T>(url: string, options: UseResourceOptions = {}) {
+  const { data, error, isLoading, isValidating, mutate } = useSWR<T[]>(url, fetcher, {
+    refreshInterval: options.refreshInterval,
+    revalidateOnFocus: true,
+    keepPreviousData: true,
+  });
   return {
     data: data ?? [],
     isLoading,
+    isValidating,
     isError: Boolean(error),
     mutate,
   };

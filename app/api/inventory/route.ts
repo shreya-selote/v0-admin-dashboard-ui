@@ -38,3 +38,52 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// Derive a human-readable stock status from the quantity on hand.
+function statusForQuantity(quantity: number) {
+  if (quantity <= 0) return "Out of Stock";
+  if (quantity <= 3) return "Low Stock";
+  return "In Stock";
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, delta, quantity } = body ?? {};
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "An inventory id is required" },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+    const item = await Inventory.findById(id);
+    if (!item) {
+      return NextResponse.json(
+        { error: "Inventory item not found" },
+        { status: 404 }
+      );
+    }
+
+    // Support both an absolute quantity and a relative delta (+1 / -1).
+    const nextQuantity =
+      typeof quantity === "number"
+        ? quantity
+        : Math.max(0, (item.quantity ?? 0) + (delta ?? 0));
+
+    item.quantity = nextQuantity;
+    item.status = statusForQuantity(nextQuantity);
+    item.lastUpdated = new Date().toISOString();
+    await item.save();
+
+    return NextResponse.json(serialize(item.toObject()));
+  } catch (error) {
+    console.error("[v0] PATCH /api/inventory failed:", error);
+    return NextResponse.json(
+      { error: "Failed to update inventory item" },
+      { status: 500 }
+    );
+  }
+}

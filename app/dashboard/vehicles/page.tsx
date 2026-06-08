@@ -1,17 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DollarSign, Gauge } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
 import { SkeletonLoader } from '@/components/skeleton-loader';
 import { EmptyState } from '@/components/empty-state';
+import { AddVehicleModal } from '@/components/add-vehicle-modal';
 import { useResource } from '@/lib/use-resource';
 import { Vehicle } from '@/lib/types';
 
 export default function VehiclesPage() {
-  const { data: vehicles, isLoading, isError } = useResource<Vehicle>('/api/vehicles');
+  const { data: vehicles, isLoading, isError, mutate } = useResource<Vehicle>('/api/vehicles');
+  const [modalOpen, setModalOpen] = useState(false);
 
   const columns = [
     {
@@ -87,7 +89,7 @@ export default function VehiclesPage() {
         breadcrumbs={[{ label: 'Home' }, { label: 'Vehicles' }]}
         action={{
           label: 'Add Vehicle',
-          onClick: () => alert('Add vehicle functionality to be implemented'),
+          onClick: () => setModalOpen(true),
         }}
       />
 
@@ -110,6 +112,12 @@ export default function VehiclesPage() {
           />
         )}
       </div>
+
+      <AddVehicleModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => mutate()}
+      />
     </div>
   );
 }
