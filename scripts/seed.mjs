@@ -60,25 +60,11 @@ const EnquirySchema = new mongoose.Schema(
   { timestamps: true, collection: "enquiries" }
 );
 
-const InventorySchema = new mongoose.Schema(
-  {
-    vehicleId: String,
-    vehicleName: String,
-    quantity: Number,
-    location: String,
-    lastUpdated: String,
-    status: String,
-  },
-  { timestamps: true, collection: "inventory" }
-);
-
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 const Vehicle =
   mongoose.models.Vehicle || mongoose.model("Vehicle", VehicleSchema);
 const Enquiry =
   mongoose.models.Enquiry || mongoose.model("Enquiry", EnquirySchema);
-const Inventory =
-  mongoose.models.Inventory || mongoose.model("Inventory", InventorySchema);
 
 const users = [
   {
@@ -175,7 +161,6 @@ async function seed() {
     await User.deleteMany({});
     await Vehicle.deleteMany({});
     await Enquiry.deleteMany({});
-    await Inventory.deleteMany({});
 
     const insertedUsers = await User.insertMany(users);
     const insertedVehicles = await Vehicle.insertMany(vehicles);
@@ -185,29 +170,9 @@ async function seed() {
     enquiries[1].vehicleId = insertedVehicles[2]?._id?.toString();
     const insertedEnquiries = await Enquiry.insertMany(enquiries);
 
-    // Build inventory records from the inserted vehicles.
-    const inventory = insertedVehicles.map((v, i) => {
-      const quantity = [4, 0, 2][i] ?? 1;
-      return {
-        vehicleId: v._id.toString(),
-        vehicleName: `${v.make} ${v.model} - ${v.color}`,
-        quantity,
-        location: ["Showroom A", "Warehouse B", "Showroom C"][i] ?? "Showroom A",
-        lastUpdated: "2024-06-08",
-        status:
-          quantity === 0
-            ? "Out of Stock"
-            : quantity <= 2
-              ? "Low Stock"
-              : "In Stock",
-      };
-    });
-    const insertedInventory = await Inventory.insertMany(inventory);
-
     console.log(`[v0] Inserted ${insertedUsers.length} users`);
     console.log(`[v0] Inserted ${insertedVehicles.length} vehicles`);
     console.log(`[v0] Inserted ${insertedEnquiries.length} enquiries`);
-    console.log(`[v0] Inserted ${insertedInventory.length} inventory items`);
     console.log("[v0] Seed complete.");
   } catch (error) {
     console.error("[v0] Seed failed:", error);
