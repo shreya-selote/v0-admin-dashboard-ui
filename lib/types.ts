@@ -46,10 +46,10 @@ export interface Image {
 
 export interface Favorite {
   id: string;
-  userId: string;
-  vehicleId: string;
-  vehicleName: string;
-  addedAt: string;
+  favorite_id?: string;
+  user_id: string;
+  listing_id: string;
+  created_at: string;
 }
 
 export interface Enquiry {
@@ -70,6 +70,13 @@ export interface EnquiryReply {
   repliedBy: string;
   message: string;
   timestamp: string;
+}
+
+export interface AdminProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
 }
 
 export interface Notification {

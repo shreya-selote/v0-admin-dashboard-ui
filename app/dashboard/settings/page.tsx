@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Bell, Lock, User, Database, Globe, Zap } from 'lucide-react';
+import { Bell, Lock, Database, Zap } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
+import { AdminProfileForm } from '@/components/admin-profile-form';
 
 interface SettingSection {
   title: string;
@@ -114,43 +115,7 @@ export default function SettingsPage() {
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-4xl">
         <div className="space-y-6 sm:space-y-8">
           {/* Account Section */}
-          <div className="card-elevated border border-border rounded-lg p-4 sm:p-6 bg-card">
-            <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground">
-                  Account
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Manage your account information
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg hover:bg-muted/30 transition-colors">
-                <div className="min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-foreground">Full Name</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                    Alex Johnson
-                  </p>
-                </div>
-                <button className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:bg-muted rounded-lg transition-colors whitespace-nowrap min-h-9">
-                  Edit
-                </button>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg hover:bg-muted/30 transition-colors">
-                <div className="min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-foreground">Email</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                    alex@example.com
-                  </p>
-                </div>
-                <button className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:bg-muted rounded-lg transition-colors whitespace-nowrap min-h-9">
-                  Edit
-                </button>
-              </div>
-            </div>
-          </div>
+          <AdminProfileForm />
 
           {/* Settings Sections */}
           {settingSections.map((section) => (
