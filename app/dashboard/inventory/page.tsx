@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, MapPin, Package } from 'lucide-react';
+import React from 'react';
+import { MapPin, Package } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
-import { inventoryData } from '@/lib/data/inventory';
+import { useResource } from '@/lib/use-resource';
 import { Inventory } from '@/lib/types';
 
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<Inventory[]>(inventoryData);
+  const { data: inventory } = useResource<Inventory>('/api/inventory');
 
   const columns = [
     {

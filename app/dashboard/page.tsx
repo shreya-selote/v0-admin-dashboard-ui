@@ -7,8 +7,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/badge';
 import { useResource } from '@/lib/use-resource';
-import { inventoryData } from '@/lib/data/inventory';
-import { User, Vehicle, Enquiry } from '@/lib/types';
+import { User, Vehicle, Enquiry, Inventory } from '@/lib/types';
 
 const chartData = [
   { month: 'Jan', sales: 4000, enquiries: 2400 },
@@ -23,6 +22,7 @@ export default function DashboardPage() {
   const { data: usersData } = useResource<User>('/api/users');
   const { data: vehiclesData } = useResource<Vehicle>('/api/vehicles');
   const { data: enquiriesData } = useResource<Enquiry>('/api/enquiries');
+  const { data: inventoryData } = useResource<Inventory>('/api/inventory');
 
   const statusData = [
     { name: 'Available', value: vehiclesData.filter(v => v.status === 'Available').length, color: 'oklch(0.6 0.2 264.36)' },
