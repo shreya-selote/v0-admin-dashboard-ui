@@ -100,9 +100,9 @@ export function MobileDataTable<T extends { id: string }>({
                   <p className="text-xs font-medium text-muted-foreground mb-1">
                     {col.label}
                   </p>
-                  <p className="text-sm font-semibold text-foreground break-words">
+                  <div className="text-sm font-semibold text-foreground break-words">
                     {col.render ? col.render(row[col.key], row) : (row[col.key] as React.ReactNode)}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
