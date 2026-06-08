@@ -38,8 +38,9 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!cached!.promise) {
     const opts = {
       bufferCommands: false,
-      // The database name ("autohub") comes directly from the connection
-      // string, so we don't pass dbName here.
+      // Pin the database name so the app always uses "autohub" even if the
+      // connection string omits it (otherwise Mongo defaults to "test").
+      dbName: "autohub",
     };
 
     cached!.promise = mongoose

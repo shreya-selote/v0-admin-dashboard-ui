@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Mail, Phone, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { Mail, Phone } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
-import { enquiriesData } from '@/lib/data/enquiries';
+import { SkeletonLoader } from '@/components/skeleton-loader';
+import { EmptyState } from '@/components/empty-state';
+import { useResource } from '@/lib/use-resource';
 import { Enquiry } from '@/lib/types';
 
 export default function EnquiriesPage() {
-  const [enquiries, setEnquiries] = useState<Enquiry[]>(enquiriesData);
+  const { data: enquiries, isLoading, isError } = useResource<Enquiry>('/api/enquiries');
 
   const columns = [
     {
@@ -105,12 +107,23 @@ export default function EnquiriesPage() {
       />
 
       <div className="px-0 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <MobileDataTable<Enquiry>
-          columns={columns}
-          data={enquiries}
-          searchPlaceholder="Search enquiries by customer name or vehicle..."
-          rowsPerPage={10}
-        />
+        {isLoading ? (
+          <div className="px-4 sm:px-0">
+            <SkeletonLoader variant="table-row" count={5} />
+          </div>
+        ) : isError ? (
+          <EmptyState
+            title="Failed to load enquiries"
+            description="There was a problem fetching enquiries from the database. Please try again."
+          />
+        ) : (
+          <MobileDataTable<Enquiry>
+            columns={columns}
+            data={enquiries}
+            searchPlaceholder="Search enquiries by customer name or vehicle..."
+            rowsPerPage={10}
+          />
+        )}
       </div>
     </div>
   );

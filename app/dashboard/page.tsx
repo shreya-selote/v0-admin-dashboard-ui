@@ -2,14 +2,13 @@
 
 import React from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, Car, Package, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, Car, AlertCircle } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/badge';
-import { usersData } from '@/lib/data/users';
-import { vehiclesData } from '@/lib/data/vehicles';
-import { enquiriesData } from '@/lib/data/enquiries';
+import { useResource } from '@/lib/use-resource';
 import { inventoryData } from '@/lib/data/inventory';
+import { User, Vehicle, Enquiry } from '@/lib/types';
 
 const chartData = [
   { month: 'Jan', sales: 4000, enquiries: 2400 },
@@ -20,13 +19,17 @@ const chartData = [
   { month: 'Jun', sales: 2390, enquiries: 3800 },
 ];
 
-const statusData = [
-  { name: 'Available', value: vehiclesData.filter(v => v.status === 'Available').length, color: 'oklch(0.6 0.2 264.36)' },
-  { name: 'Sold', value: vehiclesData.filter(v => v.status === 'Sold').length, color: 'oklch(0.5 0.18 27)' },
-  { name: 'Pending', value: vehiclesData.filter(v => v.status === 'Pending').length, color: 'oklch(0.65 0.12 180)' },
-];
-
 export default function DashboardPage() {
+  const { data: usersData } = useResource<User>('/api/users');
+  const { data: vehiclesData } = useResource<Vehicle>('/api/vehicles');
+  const { data: enquiriesData } = useResource<Enquiry>('/api/enquiries');
+
+  const statusData = [
+    { name: 'Available', value: vehiclesData.filter(v => v.status === 'Available').length, color: 'oklch(0.6 0.2 264.36)' },
+    { name: 'Sold', value: vehiclesData.filter(v => v.status === 'Sold').length, color: 'oklch(0.5 0.18 27)' },
+    { name: 'Pending', value: vehiclesData.filter(v => v.status === 'Pending').length, color: 'oklch(0.65 0.12 180)' },
+  ];
+
   const activeUsers = usersData.filter(u => u.status === 'Active').length;
   const totalVehicles = vehiclesData.length;
   const lowStockItems = inventoryData.filter(i => i.status !== 'In Stock').length;
@@ -46,7 +49,7 @@ export default function DashboardPage() {
           <StatCard
             title="Active Users"
             value={activeUsers}
-            subtitle={`${((activeUsers / usersData.length) * 100).toFixed(0)}% of total users`}
+            subtitle={`${usersData.length ? ((activeUsers / usersData.length) * 100).toFixed(0) : 0}% of total users`}
             trend={{ value: 12, direction: 'up' }}
             icon={<Users className="h-6 w-6 text-primary" />}
           />

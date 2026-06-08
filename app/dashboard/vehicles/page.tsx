@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, DollarSign, Gauge } from 'lucide-react';
+import React from 'react';
+import { DollarSign, Gauge } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
-import { vehiclesData } from '@/lib/data/vehicles';
+import { SkeletonLoader } from '@/components/skeleton-loader';
+import { EmptyState } from '@/components/empty-state';
+import { useResource } from '@/lib/use-resource';
 import { Vehicle } from '@/lib/types';
 
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(vehiclesData);
+  const { data: vehicles, isLoading, isError } = useResource<Vehicle>('/api/vehicles');
 
   const columns = [
     {
@@ -90,12 +92,23 @@ export default function VehiclesPage() {
       />
 
       <div className="px-0 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <MobileDataTable<Vehicle>
-          columns={columns}
-          data={vehicles}
-          searchPlaceholder="Search vehicles by make, model, or plate..."
-          rowsPerPage={10}
-        />
+        {isLoading ? (
+          <div className="px-4 sm:px-0">
+            <SkeletonLoader variant="table-row" count={5} />
+          </div>
+        ) : isError ? (
+          <EmptyState
+            title="Failed to load vehicles"
+            description="There was a problem fetching vehicles from the database. Please try again."
+          />
+        ) : (
+          <MobileDataTable<Vehicle>
+            columns={columns}
+            data={vehicles}
+            searchPlaceholder="Search vehicles by make, model, or plate..."
+            rowsPerPage={10}
+          />
+        )}
       </div>
     </div>
   );
