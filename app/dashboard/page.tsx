@@ -7,8 +7,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/badge';
 import { useResource } from '@/lib/use-resource';
-import { inventoryData } from '@/lib/data/inventory';
-import { User, Vehicle, Enquiry } from '@/lib/types';
+import { User, Vehicle, Enquiry, Inventory } from '@/lib/types';
 
 const chartData = [
   { month: 'Jan', sales: 4000, enquiries: 2400 },

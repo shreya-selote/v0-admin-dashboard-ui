@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, MapPin, Package } from 'lucide-react';
+import React from 'react';
+import { MapPin, Package } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
-import { inventoryData } from '@/lib/data/inventory';
+import { SkeletonLoader } from '@/components/skeleton-loader';
+import { EmptyState } from '@/components/empty-state';
+import { useResource } from '@/lib/use-resource';
 import { Inventory } from '@/lib/types';
 
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<Inventory[]>(inventoryData);
+  const { data: inventory, isLoading, isError } = useResource<Inventory>('/api/inventory');
 
   const columns = [
     {
@@ -83,12 +85,23 @@ export default function InventoryPage() {
       />
 
       <div className="px-0 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <MobileDataTable<Inventory>
-          columns={columns}
-          data={inventory}
-          searchPlaceholder="Search inventory by vehicle name or location..."
-          rowsPerPage={10}
-        />
+        {isLoading ? (
+          <div className="px-4 sm:px-0">
+            <SkeletonLoader variant="table-row" count={5} />
+          </div>
+        ) : isError ? (
+          <EmptyState
+            title="Failed to load inventory"
+            description="There was a problem fetching inventory from the database. Please try again."
+          />
+        ) : (
+          <MobileDataTable<Inventory>
+            columns={columns}
+            data={inventory}
+            searchPlaceholder="Search inventory by vehicle name or location..."
+            rowsPerPage={10}
+          />
+        )}
       </div>
     </div>
   );
