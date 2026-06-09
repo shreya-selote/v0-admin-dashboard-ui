@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 
 export const dynamic = "force-dynamic";
 import { Enquiry } from "@/lib/models/Enquiry";
+import { createNotification } from "@/lib/notify";
 
 function serialize(doc: any) {
   const { _id, __v, ...rest } = doc;

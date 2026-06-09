@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
+import { createNotification } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,16 @@ export async function POST(request: Request) {
       state: body.state ?? "",
       isVerified: body.isVerified ?? false,
     });
-    return NextResponse.json(serializeUser(created.toObject()), { status: 201 });
+
+    const serialized = serializeUser(created.toObject());
+    await createNotification({
+      type: "Success",
+      title: "New user added",
+      message: `${serialized.name} (${serialized.email}) was added as a ${serialized.role}.`,
+      actionUrl: "/dashboard/users",
+    });
+
+    return NextResponse.json(serialized, { status: 201 });
   } catch (error) {
     console.error("[v0] POST /api/users failed:", error);
     return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
