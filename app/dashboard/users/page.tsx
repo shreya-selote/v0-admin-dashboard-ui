@@ -1,17 +1,44 @@
 'use client';
 
-import React from 'react';
-import { Mail, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
 import { SkeletonLoader } from '@/components/skeleton-loader';
 import { EmptyState } from '@/components/empty-state';
+import { UserModal } from '@/components/user-modal';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useResource } from '@/lib/use-resource';
 import { User } from '@/lib/types';
 
 export default function UsersPage() {
-  const { data: users, isLoading, isError } = useResource<User>('/api/users');
+  const { data: users, isLoading, isError, mutate } = useResource<User>('/api/users');
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+
+  const openAdd = () => {
+    setEditingUser(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (user: User) => {
+    setEditingUser(user);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingUser) return;
+    const res = await fetch(`/api/users/${deletingUser.id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? 'Failed to delete user');
+    }
+    setDeletingUser(null);
+    mutate();
+  };
 
   const columns = [
     {
@@ -56,6 +83,28 @@ export default function UsersPage() {
         </div>
       ),
     },
+    {
+      key: 'id' as const,
+      label: 'Actions',
+      render: (_value: string, row: User) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => openEdit(row)}
+            aria-label={`Edit ${row.name}`}
+            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setDeletingUser(row)}
+            aria-label={`Delete ${row.name}`}
+            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-red-500 dark:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -66,7 +115,7 @@ export default function UsersPage() {
         breadcrumbs={[{ label: 'Home' }, { label: 'Users' }]}
         action={{
           label: 'Add User',
-          onClick: () => alert('Add user functionality to be implemented'),
+          onClick: openAdd,
         }}
       />
 
@@ -89,6 +138,27 @@ export default function UsersPage() {
           />
         )}
       </div>
+
+      <UserModal
+        open={modalOpen}
+        user={editingUser}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => mutate()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deletingUser)}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={handleDelete}
+        title="Delete User"
+        description={
+          deletingUser
+            ? `Are you sure you want to delete ${deletingUser.name}? This action cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   );
 }

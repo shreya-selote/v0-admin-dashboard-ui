@@ -1,34 +1,85 @@
 'use client';
 
 import React, { useState } from 'react';
+import useSWR from 'swr';
 import { Bell, Lock, Database, Zap } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { AdminProfileForm } from '@/components/admin-profile-form';
+
+type ToggleKey =
+  | 'emailNotifications'
+  | 'pushNotifications'
+  | 'twoFactorAuth'
+  | 'dataBackup'
+  | 'apiAccess'
+  | 'performanceMode';
+
+type Settings = Record<ToggleKey, boolean>;
+
+const DEFAULT_SETTINGS: Settings = {
+  emailNotifications: true,
+  pushNotifications: false,
+  twoFactorAuth: true,
+  dataBackup: true,
+  apiAccess: true,
+  performanceMode: false,
+};
+
+interface SettingItem {
+  label: string;
+  description?: string;
+  settingKey?: ToggleKey;
+}
 
 interface SettingSection {
   title: string;
   description: string;
   icon: React.ReactNode;
-  items: Array<{
-    label: string;
-    description?: string;
-    toggle?: boolean;
-    value?: boolean;
-  }>;
+  items: SettingItem[];
 }
 
-export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    twoFactorAuth: true,
-    dataBackup: true,
-    apiAccess: true,
-    performanceMode: false,
-  });
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch settings');
+  return res.json();
+};
 
-  const handleToggle = (key: keyof typeof settings) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+export default function SettingsPage() {
+  const { data, isLoading, mutate } = useSWR<Partial<Settings>>('/api/settings', fetcher);
+  const [savingKey, setSavingKey] = useState<ToggleKey | null>(null);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // Merge persisted values over defaults so the UI is always fully defined.
+  const settings: Settings = { ...DEFAULT_SETTINGS, ...(data ?? {}) };
+
+  const handleToggle = async (key: ToggleKey) => {
+    if (savingKey) return;
+    const next = { ...settings, [key]: !settings[key] };
+
+    setSavingKey(key);
+    setStatus('idle');
+    // Optimistically update the cache without revalidating.
+    mutate(next, false);
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(next),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      const updated = await res.json();
+      // Sync UI with the server's authoritative state.
+      mutate(updated, false);
+      setStatus('success');
+    } catch (err) {
+      console.error('[v0] Save settings failed:', err);
+      // Roll back the optimistic change.
+      mutate();
+      setStatus('error');
+    } finally {
+      setSavingKey(null);
+    }
   };
 
   const settingSections: SettingSection[] = [
@@ -40,14 +91,12 @@ export default function SettingsPage() {
         {
           label: 'Email Notifications',
           description: 'Receive notifications via email',
-          toggle: true,
-          value: settings.emailNotifications,
+          settingKey: 'emailNotifications',
         },
         {
           label: 'Push Notifications',
           description: 'Receive browser push notifications',
-          toggle: true,
-          value: settings.pushNotifications,
+          settingKey: 'pushNotifications',
         },
       ],
     },
@@ -59,8 +108,7 @@ export default function SettingsPage() {
         {
           label: 'Two-Factor Authentication',
           description: 'Enhance your account security',
-          toggle: true,
-          value: settings.twoFactorAuth,
+          settingKey: 'twoFactorAuth',
         },
         {
           label: 'Password',
@@ -76,8 +124,7 @@ export default function SettingsPage() {
         {
           label: 'Automatic Backups',
           description: 'Enable automatic data backups',
-          toggle: true,
-          value: settings.dataBackup,
+          settingKey: 'dataBackup',
         },
         {
           label: 'Data Export',
@@ -93,8 +140,7 @@ export default function SettingsPage() {
         {
           label: 'API Access',
           description: 'Enable API access for your account',
-          toggle: true,
-          value: settings.apiAccess,
+          settingKey: 'apiAccess',
         },
         {
           label: 'Webhooks',
@@ -116,6 +162,19 @@ export default function SettingsPage() {
         <div className="space-y-6 sm:space-y-8">
           {/* Account Section */}
           <AdminProfileForm />
+
+          {status !== 'idle' && (
+            <div
+              className={`text-sm rounded-lg px-4 py-2 ${
+                status === 'success'
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                  : 'bg-red-500/10 text-red-600 dark:text-red-400'
+              }`}
+              role="status"
+            >
+              {status === 'success' ? 'Settings saved.' : 'Could not save settings. Please try again.'}
+            </div>
+          )}
 
           {/* Settings Sections */}
           {settingSections.map((section) => (
@@ -153,24 +212,22 @@ export default function SettingsPage() {
                         </p>
                       )}
                     </div>
-                    {item.toggle ? (
+                    {item.settingKey ? (
                       <button
-                        onClick={() =>
-                          handleToggle(
-                            item.label
-                              .toLowerCase()
-                              .replace(/\s+/g, '') as keyof typeof settings
-                          )
-                        }
-                        className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${
-                          item.value
+                        onClick={() => handleToggle(item.settingKey!)}
+                        disabled={isLoading || savingKey === item.settingKey}
+                        role="switch"
+                        aria-checked={settings[item.settingKey]}
+                        aria-label={item.label}
+                        className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 disabled:opacity-60 ${
+                          settings[item.settingKey]
                             ? 'bg-primary'
                             : 'bg-muted'
                         }`}
                       >
                         <div
                           className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
-                            item.value ? 'translate-x-5' : ''
+                            settings[item.settingKey] ? 'translate-x-5' : ''
                           }`}
                         />
                       </button>
