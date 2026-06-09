@@ -4,11 +4,15 @@ import React, { useState } from 'react';
 import { Check, X, AlertCircle, Info, CheckCircle, AlertTriangle } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { Badge } from '@/components/badge';
-import { notificationsData } from '@/lib/data/notifications';
+import { SkeletonLoader } from '@/components/skeleton-loader';
+import { EmptyState } from '@/components/empty-state';
+import { useResource } from '@/lib/use-resource';
 import { Notification } from '@/lib/types';
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(notificationsData);
+  const { data: notifications, isLoading, isError, mutate } =
+    useResource<Notification>('/api/notifications');
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -38,16 +42,44 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(
-      notifications.map((notif) =>
-        notif.id === id ? { ...notif, read: true } : notif
-      )
+  const handleMarkAsRead = async (id: string) => {
+    if (pendingId) return;
+    setPendingId(id);
+    mutate(
+      notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+      false
     );
+    try {
+      const res = await fetch(`/api/notifications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read: true }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+    } catch (err) {
+      console.error('[v0] Mark as read failed:', err);
+    } finally {
+      mutate();
+      setPendingId(null);
+    }
   };
 
-  const handleDismiss = (id: string) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id));
+  const handleDismiss = async (id: string) => {
+    if (pendingId) return;
+    setPendingId(id);
+    mutate(
+      notifications.filter((n) => n.id !== id),
+      false
+    );
+    try {
+      const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Request failed');
+    } catch (err) {
+      console.error('[v0] Dismiss notification failed:', err);
+    } finally {
+      mutate();
+      setPendingId(null);
+    }
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -65,14 +97,21 @@ export default function NotificationsPage() {
       />
 
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-2xl">
-        <div className="space-y-2 sm:space-y-3">
-          {notifications.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-sm sm:text-base text-muted-foreground">No notifications</p>
-            </div>
-          ) : (
-            notifications.map((notification) => (
+        {isLoading ? (
+          <SkeletonLoader variant="table-row" count={4} />
+        ) : isError ? (
+          <EmptyState
+            title="Failed to load notifications"
+            description="There was a problem fetching notifications from the database. Please try again."
+          />
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-sm sm:text-base text-muted-foreground">No notifications</p>
+          </div>
+        ) : (
+          <div className="space-y-2 sm:space-y-3">
+            {notifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`card-elevated border border-border rounded-lg p-3 sm:p-4 flex items-start gap-3 sm:gap-4 transition-all ${
@@ -119,7 +158,8 @@ export default function NotificationsPage() {
                   {!notification.read && (
                     <button
                       onClick={() => handleMarkAsRead(notification.id)}
-                      className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors min-h-8 min-w-8"
+                      disabled={pendingId === notification.id}
+                      className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors min-h-8 min-w-8 disabled:opacity-40"
                       title="Mark as read"
                     >
                       <Check className="h-4 w-4" />
@@ -127,16 +167,17 @@ export default function NotificationsPage() {
                   )}
                   <button
                     onClick={() => handleDismiss(notification.id)}
-                    className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors min-h-8 min-w-8"
+                    disabled={pendingId === notification.id}
+                    className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors min-h-8 min-w-8 disabled:opacity-40"
                     title="Dismiss"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

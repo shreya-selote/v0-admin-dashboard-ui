@@ -4,15 +4,32 @@ import { Favorite } from "@/lib/models/Favorite";
 
 export const dynamic = "force-dynamic";
 
+// The real `favorites` collection may use either {userId, carId, createdAt} or
+// the legacy {user_id, listing_id, created_at}. Normalize to both so the UI can
+// rely on `user_id`, `listing_id`, and `created_at` regardless of source shape.
 function serialize(doc: any) {
-  const { _id, __v, ...rest } = doc;
-  return { id: _id.toString(), ...rest };
+  const { _id, __v, userId, carId, createdAt, ...rest } = doc;
+  const user_id = rest.user_id ?? userId ?? "";
+  const listing_id = rest.listing_id ?? carId ?? "";
+  const created_at = rest.created_at ?? createdAt ?? null;
+  return {
+    id: _id.toString(),
+    ...rest,
+    user_id,
+    listing_id,
+    created_at: created_at
+      ? new Date(created_at).toISOString()
+      : null,
+  };
 }
 
 export async function GET() {
   try {
     await connectDB();
-    const favorites = await Favorite.find({}).sort({ created_at: -1 }).lean();
+    // Sort by either timestamp field; fall back gracefully when one is absent.
+    const favorites = await Favorite.find({})
+      .sort({ createdAt: -1, created_at: -1 })
+      .lean();
     return NextResponse.json(favorites.map(serialize));
   } catch (error) {
     console.error("[v0] GET /api/favorites failed:", error);
