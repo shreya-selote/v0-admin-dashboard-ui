@@ -1,17 +1,44 @@
 'use client';
 
-import React from 'react';
-import { Mail, Phone } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Phone, Pencil, Trash2 } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { MobileDataTable } from '@/components/mobile-data-table';
 import { Badge } from '@/components/badge';
 import { SkeletonLoader } from '@/components/skeleton-loader';
 import { EmptyState } from '@/components/empty-state';
+import { EnquiryModal } from '@/components/enquiry-modal';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useResource } from '@/lib/use-resource';
 import { Enquiry } from '@/lib/types';
 
 export default function EnquiriesPage() {
-  const { data: enquiries, isLoading, isError } = useResource<Enquiry>('/api/enquiries');
+  const { data: enquiries, isLoading, isError, mutate } = useResource<Enquiry>('/api/enquiries');
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Enquiry | null>(null);
+  const [deleting, setDeleting] = useState<Enquiry | null>(null);
+
+  const openNew = () => {
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (enquiry: Enquiry) => {
+    setEditing(enquiry);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    const res = await fetch(`/api/enquiries/${deleting.id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? 'Failed to delete enquiry');
+    }
+    setDeleting(null);
+    mutate();
+  };
 
   const columns = [
     {
@@ -91,6 +118,28 @@ export default function EnquiriesPage() {
         </span>
       ),
     },
+    {
+      key: 'id' as const,
+      label: 'Actions',
+      render: (_value: string, row: Enquiry) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => openEdit(row)}
+            aria-label={`Edit enquiry from ${row.customerName}`}
+            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setDeleting(row)}
+            aria-label={`Delete enquiry from ${row.customerName}`}
+            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-red-500 dark:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -101,8 +150,7 @@ export default function EnquiriesPage() {
         breadcrumbs={[{ label: 'Home' }, { label: 'Enquiries' }]}
         action={{
           label: 'New Enquiry',
-          onClick: () =>
-            alert('New enquiry functionality to be implemented'),
+          onClick: openNew,
         }}
       />
 
@@ -125,6 +173,27 @@ export default function EnquiriesPage() {
           />
         )}
       </div>
+
+      <EnquiryModal
+        open={modalOpen}
+        enquiry={editing}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => mutate()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        onConfirm={handleDelete}
+        title="Delete Enquiry"
+        description={
+          deleting
+            ? `Are you sure you want to delete the enquiry from ${deleting.customerName}? This action cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   );
 }

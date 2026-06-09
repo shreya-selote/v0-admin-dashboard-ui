@@ -8,10 +8,12 @@ import { useResource } from '@/lib/use-resource';
 import { Favorite } from '@/lib/types';
 import { EmptyState } from '@/components/empty-state';
 import { SkeletonLoader } from '@/components/skeleton-loader';
+import { AddFavoriteModal } from '@/components/add-favorite-modal';
 
 export default function FavoritesPage() {
   const { data: favorites, isLoading, mutate } = useResource<Favorite>('/api/favorites');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleDelete = async (id: string) => {
     if (deletingId) return;
@@ -88,6 +90,7 @@ export default function FavoritesPage() {
           title="Favorites"
           description="View all favorited vehicles."
           breadcrumbs={[{ label: 'Home' }, { label: 'Favorites' }]}
+          action={{ label: 'Add Favorite', onClick: () => setModalOpen(true) }}
         />
         <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <EmptyState
@@ -96,6 +99,11 @@ export default function FavoritesPage() {
             description="Start adding your favorite vehicles to track them here."
           />
         </div>
+        <AddFavoriteModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSuccess={() => mutate()}
+        />
       </div>
     );
   }
@@ -106,6 +114,7 @@ export default function FavoritesPage() {
         title="Favorites"
         description="View all favorited vehicles."
         breadcrumbs={[{ label: 'Home' }, { label: 'Favorites' }]}
+        action={{ label: 'Add Favorite', onClick: () => setModalOpen(true) }}
       />
 
       <div className="px-0 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -122,6 +131,12 @@ export default function FavoritesPage() {
           />
         )}
       </div>
+
+      <AddFavoriteModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => mutate()}
+      />
     </div>
   );
 }

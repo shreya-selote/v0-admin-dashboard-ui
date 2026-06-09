@@ -8,11 +8,13 @@ import { SkeletonLoader } from '@/components/skeleton-loader';
 import { EmptyState } from '@/components/empty-state';
 import { useResource } from '@/lib/use-resource';
 import { Notification } from '@/lib/types';
+import { CreateNotificationModal } from '@/components/create-notification-modal';
 
 export default function NotificationsPage() {
   const { data: notifications, isLoading, isError, mutate } =
     useResource<Notification>('/api/notifications');
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -94,6 +96,7 @@ export default function NotificationsPage() {
             : 'All caught up!'
         }
         breadcrumbs={[{ label: 'Home' }, { label: 'Notifications' }]}
+        action={{ label: 'New Notification', onClick: () => setModalOpen(true) }}
       />
 
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-2xl">
@@ -179,6 +182,12 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
+
+      <CreateNotificationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => mutate()}
+      />
     </div>
   );
 }
