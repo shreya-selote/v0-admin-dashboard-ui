@@ -22,11 +22,16 @@ if (!cached) {
 }
 
 export async function connectDB(): Promise<typeof mongoose> {
-  const MONGODB_URI = process.env.MONGODB_URI;
+  // The project provides the connection string as MONGODB_CONNECTION_STRING.
+  // Fall back to the common MONGODB_URI/MONGODB_URL names for portability.
+  const MONGODB_URI =
+    process.env.MONGODB_CONNECTION_STRING ||
+    process.env.MONGODB_URI ||
+    process.env.MONGODB_URL;
 
   if (!MONGODB_URI) {
     throw new Error(
-      "Please define the MONGODB_URI environment variable inside .env.local"
+      "Please define the MONGODB_CONNECTION_STRING environment variable."
     );
   }
 

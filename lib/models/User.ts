@@ -1,17 +1,23 @@
 import mongoose from "mongoose";
 
+// Matches the real `users` collection (marketplace accounts). strict:false so we
+// never drop unexpected fields when reading/writing existing documents.
 const UserSchema = new mongoose.Schema(
   {
-    name: String,
+    firstName: String,
+    lastName: String,
     email: String,
-    role: String,
-    status: String,
-    joinDate: String,
-    avatar: String,
+    password: String,
+    userType: String,
+    phone: String,
+    city: String,
+    state: String,
+    isVerified: Boolean,
   },
   {
     timestamps: true,
     collection: "users",
+    strict: false,
   }
 );
 
